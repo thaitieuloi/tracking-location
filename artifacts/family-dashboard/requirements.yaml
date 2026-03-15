@@ -1,0 +1,25 @@
+packages:
+  "leaflet": "Map rendering"
+  "react-leaflet": "React components for Leaflet maps"
+  "@types/leaflet": "Types for Leaflet"
+  "@supabase/supabase-js": "Supabase client for realtime subscriptions"
+  "framer-motion": "Animations and smooth transitions for polished UI"
+  "date-fns": "Date formatting for chat and history"
+  "react-hook-form": "Form state management"
+  "@hookform/resolvers": "Zod resolver for forms"
+  "zod": "Schema validation"
+  "clsx": "Classname utility"
+  "tailwind-merge": "Classname utility"
+
+images:
+  - path: "artifacts/family-dashboard/public/images/auth-bg.png"
+    description: "A warm, stylized vector illustration of a family walking together in a park at sunset, soft coral and orange lighting, modern flat design, perfect for an app background"
+    aspect_ratio: "16:9"
+  - path: "artifacts/family-dashboard/public/images/logo.png"
+    description: "A beautiful, minimalist modern app icon logo showing a stylized location pin with a heart inside, warm coral and orange gradient, soft drop shadow, transparent background"
+    aspect_ratio: "1:1"
+
+notes:
+  - Leaflet map requires importing leaflet/dist/leaflet.css
+  - App expects Supabase environment variables for real-time features
+  - Uses @workspace/api-client-react for all API calls

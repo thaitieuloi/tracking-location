@@ -19,8 +19,6 @@ function resolveMethod(input: RequestInfo | URL, explicitMethod?: string): strin
   return "GET";
 }
 
-// Use loose check for URL — some runtimes (e.g. React Native) polyfill URL
-// differently, so `instanceof URL` can fail.
 function isUrl(input: RequestInfo | URL): input is URL {
   return typeof URL !== "undefined" && input instanceof URL;
 }
@@ -64,8 +62,6 @@ function isTextMediaType(mediaType: string | null): boolean {
   );
 }
 
-// Loose equality (`== null`) handles both `null` (browser) and `undefined`
-// (React Native, which doesn't implement ReadableStream body).
 function hasNoBody(response: Response, method: string): boolean {
   if (method === "HEAD") return true;
   if (NO_BODY_STATUS.has(response.status)) return true;
@@ -207,7 +203,6 @@ async function parseErrorBody(response: Response, method: string): Promise<unkno
 
   const mediaType = getMediaType(response.headers);
 
-  // Fall back to text when blob() is unavailable (e.g. some React Native builds).
   if (mediaType && !isJsonMediaType(mediaType) && !isTextMediaType(mediaType)) {
     return typeof response.blob === "function" ? response.blob() : response.text();
   }
@@ -271,6 +266,31 @@ async function parseSuccessBody(
   }
 }
 
+function getSupabaseAuthHeaders(): Record<string, string> {
+  try {
+    if (typeof window === "undefined" || !window.localStorage) return {};
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key || !key.includes("auth-token")) continue;
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw);
+      const token = parsed?.access_token || parsed?.session?.access_token;
+      const userId = parsed?.user?.id || parsed?.session?.user?.id;
+      if (token && userId) {
+        return {
+          "Authorization": `Bearer ${token}`,
+          "x-user-id": userId,
+        };
+      }
+    }
+    return {};
+  } catch {
+    return {};
+  }
+}
+
 export async function customFetch<T = unknown>(
   input: RequestInfo | URL,
   options: CustomFetchOptions = {},
@@ -283,7 +303,13 @@ export async function customFetch<T = unknown>(
     throw new TypeError(`customFetch: ${method} requests cannot have a body.`);
   }
 
-  const headers = mergeHeaders(isRequest(input) ? input.headers : undefined, headersInit);
+  const authHeaders = getSupabaseAuthHeaders();
+
+  const headers = mergeHeaders(
+    isRequest(input) ? input.headers : undefined,
+    headersInit,
+    authHeaders,
+  );
 
   if (
     typeof init.body === "string" &&

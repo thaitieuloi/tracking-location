@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "FamilyTracker Dashboard"
+version = "1.0.0"
+id = "artifacts/family-dashboard"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+localPort = 22156
+name = "web"
+paths = ["/"]
+
+[services.development]
+run = "pnpm --filter @workspace/family-dashboard run dev"
+
+[services.env]
+PORT = "22156"
+BASE_PATH = "/"
+
+[services.production]
+build = ["pnpm", "--filter", "@workspace/family-dashboard", "run", "build"]
+publicDir = "artifacts/family-dashboard/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
