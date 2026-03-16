@@ -1,1 +1,0 @@
-{"version":3,"file":"sendSOSRequest.d.ts","sourceRoot":"","sources":["../../../src/generated/types/sendSOSRequest.ts"],"names":[],"mappings":"AAAA;;;;;;GAMG;AAEH,MAAM,WAAW,cAAc;IAC7B,QAAQ,CAAC,EAAE,MAAM,GAAG,IAAI,CAAC;IACzB,SAAS,CAAC,EAAE,MAAM,GAAG,IAAI,CAAC;IAC1B,OAAO,CAAC,EAAE,MAAM,GAAG,IAAI,CAAC;CACzB"}
