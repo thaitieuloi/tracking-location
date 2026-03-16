@@ -1,22 +1,35 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: FamilyTracker API - Real-time family location tracking
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: families
+    description: Family group management
+  - name: members
+    description: Family member operations
+  - name: locations
+    description: Location tracking
+  - name: geofences
+    description: Geofence management
+  - name: messages
+    description: Family chat
+  - name: sos
+    description: SOS alerts
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +37,339 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/profile:
+    get:
+      operationId: getMyProfile
+      tags: [auth]
+      summary: Get current user profile
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        "401":
+          description: Unauthorized
+    put:
+      operationId: updateMyProfile
+      tags: [auth]
+      summary: Update current user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileRequest"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+
+  /families:
+    post:
+      operationId: createFamily
+      tags: [families]
+      summary: Create a new family group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFamilyRequest"
+      responses:
+        "201":
+          description: Family created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Family"
+
+  /families/join:
+    post:
+      operationId: joinFamily
+      tags: [families]
+      summary: Join a family using invite code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JoinFamilyRequest"
+      responses:
+        "200":
+          description: Joined family
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Family"
+
+  /families/my:
+    get:
+      operationId: getMyFamily
+      tags: [families]
+      summary: Get current user's family
+      responses:
+        "200":
+          description: Family info with members and their locations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FamilyWithMembers"
+        "404":
+          description: Not in any family
+
+  /families/{familyId}/members:
+    get:
+      operationId: getFamilyMembers
+      tags: [members]
+      summary: Get all members with their latest locations
+      parameters:
+        - name: familyId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of members with locations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MemberWithLocation"
+
+  /families/{familyId}/members/{userId}:
+    delete:
+      operationId: removeFamilyMember
+      tags: [members]
+      summary: Remove a member from family
+      parameters:
+        - name: familyId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Member removed
+
+  /locations/update:
+    post:
+      operationId: updateLocation
+      tags: [locations]
+      summary: Update current user's location (called by Flutter app)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLocationRequest"
+      responses:
+        "200":
+          description: Location updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LatestLocation"
+
+  /locations/{userId}/latest:
+    get:
+      operationId: getMemberLatestLocation
+      tags: [locations]
+      summary: Get latest location of a family member
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Latest location
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LatestLocation"
+
+  /locations/{userId}/history:
+    get:
+      operationId: getMemberLocationHistory
+      tags: [locations]
+      summary: Get location history trail of a member
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: hours
+          in: query
+          schema:
+            type: integer
+            default: 3
+      responses:
+        "200":
+          description: Location history points
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LocationHistoryPoint"
+
+  /families/{familyId}/dashboard:
+    get:
+      operationId: getFamilyDashboard
+      tags: [families]
+      summary: Get full family dashboard data (all members + locations)
+      parameters:
+        - name: familyId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Full dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FamilyDashboard"
+
+  /geofences:
+    get:
+      operationId: getGeofences
+      tags: [geofences]
+      summary: Get all geofences for current user's family
+      responses:
+        "200":
+          description: List of geofences
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Geofence"
+    post:
+      operationId: createGeofence
+      tags: [geofences]
+      summary: Create a new geofence
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGeofenceRequest"
+      responses:
+        "201":
+          description: Geofence created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Geofence"
+
+  /geofences/{geofenceId}:
+    delete:
+      operationId: deleteGeofence
+      tags: [geofences]
+      summary: Delete a geofence
+      parameters:
+        - name: geofenceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Geofence deleted
+
+  /messages:
+    get:
+      operationId: getFamilyMessages
+      tags: [messages]
+      summary: Get family chat messages
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: before
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Message"
+    post:
+      operationId: sendMessage
+      tags: [messages]
+      summary: Send a message to family chat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendMessageRequest"
+      responses:
+        "201":
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+
+  /sos/send:
+    post:
+      operationId: sendSOS
+      tags: [sos]
+      summary: Send SOS alert to family
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendSOSRequest"
+      responses:
+        "200":
+          description: SOS sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SOSAlert"
+
+  /sos/alerts:
+    get:
+      operationId: getSOSAlerts
+      tags: [sos]
+      summary: Get recent SOS alerts for family
+      responses:
+        "200":
+          description: List of SOS alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SOSAlert"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +380,359 @@ components:
       required:
         - status
 
+    Profile:
+      type: object
+      properties:
+        user_id:
+          type: string
+        full_name:
+          type: string
+          nullable: true
+        avatar_url:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+        updated_at:
+          type: string
+      required:
+        - user_id
+        - created_at
+        - updated_at
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        full_name:
+          type: string
+        avatar_url:
+          type: string
+        phone:
+          type: string
+
+    Family:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        invite_code:
+          type: string
+        created_by:
+          type: string
+        created_at:
+          type: string
+        updated_at:
+          type: string
+      required:
+        - id
+        - name
+        - invite_code
+        - created_by
+        - created_at
+        - updated_at
+
+    CreateFamilyRequest:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
+
+    JoinFamilyRequest:
+      type: object
+      properties:
+        invite_code:
+          type: string
+      required:
+        - invite_code
+
+    LatestLocation:
+      type: object
+      properties:
+        user_id:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        accuracy:
+          type: number
+          nullable: true
+        speed:
+          type: number
+          nullable: true
+        heading:
+          type: number
+          nullable: true
+        is_moving:
+          type: boolean
+          nullable: true
+        battery_level:
+          type: integer
+          nullable: true
+        updated_at:
+          type: string
+      required:
+        - user_id
+        - latitude
+        - longitude
+        - updated_at
+
+    UpdateLocationRequest:
+      type: object
+      properties:
+        latitude:
+          type: number
+        longitude:
+          type: number
+        accuracy:
+          type: number
+          nullable: true
+        speed:
+          type: number
+          nullable: true
+        heading:
+          type: number
+          nullable: true
+        is_moving:
+          type: boolean
+          nullable: true
+        battery_level:
+          type: integer
+          nullable: true
+      required:
+        - latitude
+        - longitude
+
+    LocationHistoryPoint:
+      type: object
+      properties:
+        id:
+          type: string
+        user_id:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        speed:
+          type: number
+          nullable: true
+        is_moving:
+          type: boolean
+          nullable: true
+        recorded_at:
+          type: string
+      required:
+        - id
+        - user_id
+        - latitude
+        - longitude
+        - recorded_at
+
+    MemberWithLocation:
+      type: object
+      properties:
+        user_id:
+          type: string
+        role:
+          type: string
+        profile:
+          $ref: "#/components/schemas/Profile"
+        location:
+          $ref: "#/components/schemas/LatestLocation"
+          nullable: true
+      required:
+        - user_id
+        - role
+        - profile
+
+    FamilyWithMembers:
+      type: object
+      properties:
+        family:
+          $ref: "#/components/schemas/Family"
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/MemberWithLocation"
+      required:
+        - family
+        - members
+
+    FamilyDashboard:
+      type: object
+      properties:
+        family:
+          $ref: "#/components/schemas/Family"
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/MemberWithLocation"
+        geofences:
+          type: array
+          items:
+            $ref: "#/components/schemas/Geofence"
+        recent_alerts:
+          type: array
+          items:
+            $ref: "#/components/schemas/SOSAlert"
+      required:
+        - family
+        - members
+        - geofences
+        - recent_alerts
+
+    Geofence:
+      type: object
+      properties:
+        id:
+          type: string
+        family_id:
+          type: string
+        name:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        radius:
+          type: number
+        created_by:
+          type: string
+        created_at:
+          type: string
+      required:
+        - id
+        - family_id
+        - name
+        - latitude
+        - longitude
+        - radius
+        - created_by
+        - created_at
+
+    CreateGeofenceRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        radius:
+          type: number
+      required:
+        - name
+        - latitude
+        - longitude
+        - radius
+
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+        family_id:
+          type: string
+        user_id:
+          type: string
+        content:
+          type: string
+        message_type:
+          type: string
+          enum: [text, image, location_pin]
+        image_url:
+          type: string
+          nullable: true
+        location_lat:
+          type: number
+          nullable: true
+        location_lng:
+          type: number
+          nullable: true
+        created_at:
+          type: string
+        profile:
+          $ref: "#/components/schemas/Profile"
+          nullable: true
+      required:
+        - id
+        - family_id
+        - user_id
+        - content
+        - message_type
+        - created_at
+
+    SendMessageRequest:
+      type: object
+      properties:
+        content:
+          type: string
+        message_type:
+          type: string
+          enum: [text, image, location_pin]
+          default: text
+        image_url:
+          type: string
+          nullable: true
+        location_lat:
+          type: number
+          nullable: true
+        location_lng:
+          type: number
+          nullable: true
+      required:
+        - content
+
+    SOSAlert:
+      type: object
+      properties:
+        id:
+          type: string
+        family_id:
+          type: string
+        user_id:
+          type: string
+        latitude:
+          type: number
+          nullable: true
+        longitude:
+          type: number
+          nullable: true
+        message:
+          type: string
+          nullable: true
+        is_resolved:
+          type: boolean
+        created_at:
+          type: string
+        profile:
+          $ref: "#/components/schemas/Profile"
+          nullable: true
+      required:
+        - id
+        - family_id
+        - user_id
+        - is_resolved
+        - created_at
+
+    SendSOSRequest:
+      type: object
+      properties:
+        latitude:
+          type: number
+          nullable: true
+        longitude:
+          type: number
+          nullable: true
+        message:
+          type: string
+          nullable: true
