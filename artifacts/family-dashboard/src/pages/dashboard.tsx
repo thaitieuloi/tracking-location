@@ -1,6 +1,6 @@
 import React from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { FamilyMap } from "@/components/map/FamilyMap";
+import { FamilyMap, type MemberWithLocation } from "@/components/map/FamilyMap";
 import { SOSButton } from "@/components/SOSButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card } from "@/components/ui/core";

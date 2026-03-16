@@ -14,9 +14,10 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
-  const { data: messages = [], isLoading } = useGetFamilyMessages({ limit: 100 }, {
-    query: { refetchInterval: 3000 }
-  });
+  const { data: messages = [], isLoading } = useGetFamilyMessages(
+    { limit: 100 },
+    { query: { refetchInterval: 3000, queryKey: ["/api/messages", { limit: 100 }] } }
+  );
   
   const { mutate: sendMessage, isPending } = useSendMessage();
 

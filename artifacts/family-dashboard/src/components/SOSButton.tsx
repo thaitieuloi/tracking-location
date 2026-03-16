@@ -11,9 +11,9 @@ export function SOSButton() {
   const { toast } = useToast();
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setTimeout>;
     if (isCounting && countdown > 0) {
-      timer = setTimeout(() => setCountdown(c => c - 1), 1000);
+      timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
     } else if (isCounting && countdown === 0) {
       triggerSOS();
     }
@@ -23,29 +23,42 @@ export function SOSButton() {
   const triggerSOS = () => {
     setIsCounting(false);
     setCountdown(5);
-    
-    // Attempt to get geolocation
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          sendSOS({
-            data: {
-              latitude: pos.coords.latitude,
-              longitude: pos.coords.longitude,
-              message: "I need help immediately!",
-            }
-          }, {
-            onSuccess: () => {
-              toast({ title: "SOS Alert Sent", description: "Your family has been notified.", variant: "destructive" });
-            }
-          });
+
+    const doSend = (lat?: number, lng?: number) => {
+      sendSOS(
+        {
+          data: {
+            latitude: lat,
+            longitude: lng,
+            message: "Tôi cần giúp đỡ ngay lập tức!",
+          },
         },
-        () => {
-          sendSOS({ data: { message: "I need help immediately! (Location unavailable)" } });
+        {
+          onSuccess: () => {
+            toast({
+              title: "🚨 Đã gửi tín hiệu SOS",
+              description: "Gia đình của bạn đã được thông báo.",
+              variant: "destructive",
+            });
+          },
+          onError: () => {
+            toast({
+              title: "Lỗi gửi SOS",
+              description: "Không thể gửi tín hiệu. Vui lòng thử lại.",
+              variant: "destructive",
+            });
+          },
         }
       );
+    };
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => doSend(pos.coords.latitude, pos.coords.longitude),
+        () => doSend()
+      );
     } else {
-      sendSOS({ data: { message: "I need help immediately!" } });
+      doSend();
     }
   };
 
@@ -64,15 +77,16 @@ export function SOSButton() {
       <AnimatePresence>
         {isCounting ? (
           <motion.div
+            key="counting"
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.8, opacity: 0 }}
             className="flex flex-col items-center gap-4"
           >
             <div className="relative flex items-center justify-center w-24 h-24">
-              <motion.div 
+              <motion.div
                 className="absolute inset-0 rounded-full border-4 border-destructive"
-                animate={{ scale: [1, 1.2, 1], opacity: [1, 0.5, 1] }}
+                animate={{ scale: [1, 1.3, 1], opacity: [1, 0.4, 1] }}
                 transition={{ duration: 1, repeat: Infinity }}
               />
               <div className="absolute inset-0 rounded-full bg-destructive/20 animate-ping" />
@@ -80,22 +94,24 @@ export function SOSButton() {
                 {countdown}
               </div>
             </div>
-            <button 
+            <button
               onClick={cancelSOS}
               className="bg-card text-foreground px-6 py-2 rounded-full font-bold shadow-lg border border-border flex items-center gap-2 hover:bg-muted transition-colors"
             >
-              <X className="w-4 h-4" /> Cancel
+              <X className="w-4 h-4" /> Huỷ
             </button>
           </motion.div>
         ) : (
           <motion.button
+            key="sos"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={startSOS}
             disabled={isPending}
-            className="w-16 h-16 bg-destructive text-white rounded-full flex items-center justify-center shadow-xl shadow-destructive/40 hover:shadow-2xl hover:shadow-destructive/50 transition-all border-4 border-white dark:border-background group"
+            className="w-16 h-16 bg-destructive text-white rounded-full flex items-center justify-center shadow-xl shadow-destructive/40 hover:shadow-2xl hover:shadow-destructive/50 transition-all border-4 border-white dark:border-background"
+            title="Gửi tín hiệu SOS khẩn cấp"
           >
-            <AlertTriangle className="w-8 h-8 group-hover:animate-pulse-slow" />
+            <AlertTriangle className="w-8 h-8" />
           </motion.button>
         )}
       </AnimatePresence>
